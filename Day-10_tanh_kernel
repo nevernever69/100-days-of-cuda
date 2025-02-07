@@ -1,0 +1,32 @@
+#include <iostream>
+#include <cmath>
+#include <cuda_runtime.h>
+
+#define N 10  // Small array size for simplicity
+
+__global__ void tanhKernel(float* d_input, float* d_output) {
+    int i = threadIdx.x;  // Each thread handles one element
+    d_output[i] = tanhf(d_input[i]);  // Apply tanh
+}
+
+int main() {
+    float h_input[N] = {-3.0, -2.5, -2.0, -1.5, -1.0, 0.0, 1.0, 1.5, 2.0, 2.5};
+    float h_output[N];
+
+    float *d_input, *d_output;
+    cudaMalloc(&d_input, N * sizeof(float));
+    cudaMalloc(&d_output, N * sizeof(float));
+
+    cudaMemcpy(d_input, h_input, N * sizeof(float), cudaMemcpyHostToDevice);
+
+    tanhKernel<<<1, N>>>(d_input, d_output);  // One block, N threads
+    cudaMemcpy(h_output, d_output, N * sizeof(float), cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < N; i++) {
+        std::cout << "tanh(" << h_input[i] << ") = " << h_output[i] << std::endl;
+    }
+
+    cudaFree(d_input);
+    cudaFree(d_output);
+    return 0;
+}
